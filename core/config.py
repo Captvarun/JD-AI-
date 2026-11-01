@@ -1,0 +1,60 @@
+"""
+Configuration settings for JD Desktop Assistant.
+"""
+
+from pathlib import Path
+
+# Paths
+BASE_DIR = Path(__file__).resolve().parent.parent
+ASSETS_DIR = BASE_DIR / "assets"
+ICON_PATH = ASSETS_DIR / "jd_icon.png"
+
+# App Identity
+APP_NAME = "JD"
+APP_SUBTITLE = "Personal AI Desktop Assistant"
+APP_VERSION = "0.1.0 (Task 1)"
+
+# Global Shortcut to summon/hide JD
+GLOBAL_HOTKEY = "<ctrl>+<alt>+j"
+GLOBAL_HOTKEY_DISPLAY = "Ctrl + Alt + J"
+
+# UI Dimensions
+WINDOW_WIDTH = 380
+WINDOW_HEIGHT = 560
+AVATAR_SIZE = 42
+
+# Color Palette (Grounded in the JD Robot Helmet & Lilac background)
+COLOR_BG_DARK = "#101319"
+COLOR_CARD_DARK = "#171B24"
+COLOR_HEADER_DARK = "#13161F"
+COLOR_BORDER = "#252C3B"
+COLOR_BORDER_FOCUS = "#52FFB8"
+
+# Glowing Accents (Mint Green from JD's glowing eyes)
+COLOR_MINT = "#52FFB8"
+COLOR_MINT_HOVER = "#68FFC3"
+COLOR_MINT_GLOW = "rgba(82, 255, 184, 0.4)"
+COLOR_MINT_BG = "rgba(82, 255, 184, 0.12)"
+
+# Lilac accents (from JD's background badge)
+COLOR_LILAC = "#D2CAE6"
+COLOR_LILAC_MUTED = "#8E88A6"
+
+# Typography Colors
+COLOR_TEXT_PRIMARY = "#F3F5F7"
+COLOR_TEXT_SECONDARY = "#9BA3AF"
+COLOR_TEXT_MUTED = "#606878"
+
+# Chat Bubbles
+COLOR_BUBBLE_USER = "#202634"
+COLOR_BUBBLE_USER_TEXT = "#EAEFF7"
+COLOR_BUBBLE_JD = "#12201F"
+COLOR_BUBBLE_JD_BORDER = "#244C40"
+COLOR_BUBBLE_JD_TEXT = "#DDF8EF"
+
+# Audio Settings
+AUDIO_SAMPLE_RATE = 16000
+AUDIO_CHANNELS = 1
+AUDIO_MAX_RECORD_SECONDS = 10
+TTS_SPEECH_RATE = 175
+TTS_SPEECH_VOLUME = 0.95

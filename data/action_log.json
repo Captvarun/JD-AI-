@@ -1,0 +1,137 @@
+[
+  {
+    "id": "act_11e00e3f",
+    "task_id": "task_f75c63",
+    "task_name": "Assistant Diagnostic Self-Test",
+    "tool_name": "demo_diagnostic",
+    "intent": "Run internal diagnostic pulse to verify companion response latency",
+    "target": "JD Internal Subsystem & Memory",
+    "parameters": {
+      "scope": "core_health",
+      "safe_mode": true
+    },
+    "effect_explanation": "Will verify responsiveness of internal dialogue workers.",
+    "status": "EXECUTED",
+    "decision": "APPROVED",
+    "created_at": "2026-11-01 10:01:51 PM",
+    "decision_time": "2026-11-01 10:01:51 PM",
+    "outcome": "Executed successfully: Diagnostic pulse successful: Internal state intact, speech latency nominal."
+  },
+  {
+    "id": "act_3227267a",
+    "task_id": "task_791099",
+    "task_name": "Cancel Test Task",
+    "tool_name": "demo_diagnostic",
+    "intent": "Cancel step 2",
+    "target": "System",
+    "parameters": {},
+    "effect_explanation": "",
+    "status": "CANCELED",
+    "decision": "CANCELED",
+    "created_at": "2026-11-01 10:01:36 PM",
+    "decision_time": "2026-11-01 10:01:36 PM",
+    "outcome": "Canceled: Task was aborted before reaching this step."
+  },
+  {
+    "id": "act_67efabfe",
+    "task_id": "task_791099",
+    "task_name": "Cancel Test Task",
+    "tool_name": "demo_diagnostic",
+    "intent": "Cancel step 1",
+    "target": "System",
+    "parameters": {},
+    "effect_explanation": "",
+    "status": "CANCELED",
+    "decision": "CANCELED",
+    "created_at": "2026-11-01 10:01:36 PM",
+    "decision_time": "2026-11-01 10:01:36 PM",
+    "outcome": "Canceled by user request."
+  },
+  {
+    "id": "act_7b156b1a",
+    "task_id": "task_7f3b35",
+    "task_name": "Pause Test Task",
+    "tool_name": "demo_diagnostic",
+    "intent": "Pause check",
+    "target": "System",
+    "parameters": {},
+    "effect_explanation": "",
+    "status": "EXECUTED",
+    "decision": "APPROVED",
+    "created_at": "2026-11-01 10:01:36 PM",
+    "decision_time": "2026-11-01 10:01:36 PM",
+    "outcome": "Executed successfully: Diagnostic pulse successful: Internal state intact, speech latency nominal."
+  },
+  {
+    "id": "act_5be75193",
+    "task_id": "task_4e2675",
+    "task_name": "Multi-Step Health & Notification Pipeline",
+    "tool_name": "demo_checkpoint",
+    "intent": "Step 3: Save clean session restore point in assistant state",
+    "target": "JD Session Store",
+    "parameters": {
+      "step": 3,
+      "checkpoint_id": "post_chime_state"
+    },
+    "effect_explanation": "Updates assistant session snapshot.",
+    "status": "CANCELED",
+    "decision": "CANCELED",
+    "created_at": "2026-11-01 10:01:36 PM",
+    "decision_time": "2026-11-01 10:01:36 PM",
+    "outcome": "Discarded because preceding step 'Step 2: Trigger Windows audio alert chime to verify speaker readiness' was rejected."
+  },
+  {
+    "id": "act_f8e6e04a",
+    "task_id": "task_4e2675",
+    "task_name": "Multi-Step Health & Notification Pipeline",
+    "tool_name": "demo_chime",
+    "intent": "Step 2: Trigger Windows audio alert chime to verify speaker readiness",
+    "target": "Windows Audio Notification Subsystem",
+    "parameters": {
+      "step": 2,
+      "sound": "MB_ICONASTERISK"
+    },
+    "effect_explanation": "Will play an audible chime on your laptop speakers.",
+    "status": "REJECTED",
+    "decision": "REJECTED",
+    "created_at": "2026-11-01 10:01:36 PM",
+    "decision_time": "2026-11-01 10:01:36 PM",
+    "outcome": "Blocked: User rejected this operation."
+  },
+  {
+    "id": "act_f6ea6af5",
+    "task_id": "task_4e2675",
+    "task_name": "Multi-Step Health & Notification Pipeline",
+    "tool_name": "demo_diagnostic",
+    "intent": "Step 1: Check internal memory health before issuing notification",
+    "target": "JD Internal Health Monitor",
+    "parameters": {
+      "step": 1,
+      "test": "memory_readiness"
+    },
+    "effect_explanation": "Verifies memory baseline. If rejected, subsequent chime will not trigger.",
+    "status": "EXECUTED",
+    "decision": "APPROVED",
+    "created_at": "2026-11-01 10:01:36 PM",
+    "decision_time": "2026-11-01 10:01:36 PM",
+    "outcome": "Executed successfully: Diagnostic pulse successful: Internal state intact, speech latency nominal."
+  },
+  {
+    "id": "act_d1d089c2",
+    "task_id": "task_1f904b",
+    "task_name": "Assistant Diagnostic Self-Test",
+    "tool_name": "demo_diagnostic",
+    "intent": "Run internal diagnostic pulse to verify companion response latency",
+    "target": "JD Internal Subsystem & Memory",
+    "parameters": {
+      "scope": "core_health",
+      "safe_mode": true
+    },
+    "effect_explanation": "Will verify responsiveness of internal dialogue workers.",
+    "status": "EXECUTED",
+    "decision": "APPROVED",
+    "created_at": "2026-11-01 10:01:36 PM",
+    "decision_time": "2026-11-01 10:01:36 PM",
+    "outcome": "Executed successfully: Diagnostic pulse successful: Internal state intact, speech latency nominal."
+  }
+]

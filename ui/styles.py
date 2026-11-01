@@ -68,6 +68,28 @@ MAIN_STYLESHEET = f"""
     font-family: Consolas, monospace;
 }}
 
+/* View Switcher Tabs */
+.ViewTabBtn {{
+    background-color: transparent;
+    color: {COLOR_TEXT_SECONDARY};
+    border: 1px solid transparent;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 4px 8px;
+}}
+
+.ViewTabBtn:hover {{
+    color: {COLOR_TEXT_PRIMARY};
+    background-color: #1C2230;
+}}
+
+.ViewTabBtn[active="true"] {{
+    background-color: {COLOR_MINT_BG};
+    color: {COLOR_MINT};
+    border: 1px solid {COLOR_MINT};
+}}
+
 /* Window Control Buttons */
 .WindowCtrlBtn {{
     background-color: transparent;

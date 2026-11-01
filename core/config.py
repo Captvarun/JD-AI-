@@ -8,19 +8,21 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 ASSETS_DIR = BASE_DIR / "assets"
 ICON_PATH = ASSETS_DIR / "jd_icon.png"
+DATA_DIR = BASE_DIR / "data"
+ACTION_LOG_PATH = DATA_DIR / "action_log.json"
 
 # App Identity
 APP_NAME = "JD"
 APP_SUBTITLE = "Personal AI Desktop Assistant"
-APP_VERSION = "0.1.0 (Task 1)"
+APP_VERSION = "0.2.0 (Task 2)"
 
 # Global Shortcut to summon/hide JD
 GLOBAL_HOTKEY = "<ctrl>+<alt>+j"
 GLOBAL_HOTKEY_DISPLAY = "Ctrl + Alt + J"
 
 # UI Dimensions
-WINDOW_WIDTH = 380
-WINDOW_HEIGHT = 560
+WINDOW_WIDTH = 420
+WINDOW_HEIGHT = 600
 AVATAR_SIZE = 42
 
 # Color Palette (Grounded in the JD Robot Helmet & Lilac background)
@@ -39,6 +41,13 @@ COLOR_MINT_BG = "rgba(82, 255, 184, 0.12)"
 # Lilac accents (from JD's background badge)
 COLOR_LILAC = "#D2CAE6"
 COLOR_LILAC_MUTED = "#8E88A6"
+
+# Status colors for Approval System
+COLOR_APPROVED = "#52FFB8"
+COLOR_REJECTED = "#FF5E5E"
+COLOR_PAUSED = "#FFB84D"
+COLOR_CANCELED = "#8E95A5"
+COLOR_PENDING = "#4DA6FF"
 
 # Typography Colors
 COLOR_TEXT_PRIMARY = "#F3F5F7"

@@ -1,6 +1,7 @@
 """
 Main floating companion window for JD.
-Provides a sleek, frameless desktop presence with the JD robot helmet avatar.
+Provides a sleek, frameless desktop presence with the JD robot helmet avatar,
+action approval system, persistent action log, voice interaction, and global hotkeys.
 """
 
 from PyQt6.QtCore import Qt, QPoint, pyqtSlot, QTimer
@@ -14,6 +15,7 @@ from PyQt6.QtWidgets import (
     QSystemTrayIcon,
     QMenu,
     QApplication,
+    QStackedWidget,
 )
 
 from core.config import (
@@ -29,9 +31,13 @@ from core.config import (
 from ui.styles import MAIN_STYLESHEET
 from ui.mic_indicator import MicrophoneIndicator
 from ui.chat_widget import ChatWidget
+from ui.approval_widget import ApprovalWidget
+from ui.log_widget import ActionLogWidget
 from core.voice import TTSWorker, VoiceListener
 from core.companion import CompanionBrain
 from core.hotkey import GlobalHotkeyManager
+from core.approval import ApprovalGate
+from core.demo_tools import DEMO_TOOL_REGISTRY, DEMO_SINGLE_TASK, DEMO_MULTI_STEP_TASK
 
 
 def get_rounded_pixmap(pixmap: QPixmap, radius: int = 10) -> QPixmap:
@@ -53,12 +59,12 @@ def get_rounded_pixmap(pixmap: QPixmap, radius: int = 10) -> QPixmap:
 
 class JDCompanionWindow(QWidget):
     """
-    Floating desktop companion window.
+    Floating desktop companion window with Approval System and Action Log.
     """
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        # Window flags: Frameless, stays on top, tool window to stay nimble
+        # Frameless, stays on top, tool window
         self.setWindowFlags(
             Qt.WindowType.FramelessWindowHint |
             Qt.WindowType.WindowStaysOnTopHint
@@ -72,6 +78,10 @@ class JDCompanionWindow(QWidget):
 
         # Core subsystems
         self.brain = CompanionBrain(self)
+        self.approval_gate = ApprovalGate(self)
+        for tool_name, handler in DEMO_TOOL_REGISTRY.items():
+            self.approval_gate.register_tool_handler(tool_name, handler)
+
         self.tts = TTSWorker(self)
         self.listener = VoiceListener(self)
         self.hotkey_mgr = GlobalHotkeyManager(parent=self)
@@ -84,10 +94,10 @@ class JDCompanionWindow(QWidget):
         self.tts.start()
         self.hotkey_mgr.start()
 
-        # Position on bottom-right of the primary screen
+        # Position on bottom-right of screen
         self._position_on_screen()
 
-        # Trigger initial spoken and written greeting
+        # Initial spoken & written greeting
         QTimer.singleShot(600, self._initial_greeting)
 
     def _init_ui(self):
@@ -108,8 +118,8 @@ class JDCompanionWindow(QWidget):
         self.header = QWidget(self.card)
         self.header.setObjectName("HeaderWidget")
         header_layout = QHBoxLayout(self.header)
-        header_layout.setContentsMargins(12, 10, 12, 10)
-        header_layout.setSpacing(10)
+        header_layout.setContentsMargins(12, 8, 12, 8)
+        header_layout.setSpacing(8)
 
         # Avatar Icon (Using the exact uploaded JD helmet image)
         self.avatar_label = QLabel(self.header)
@@ -145,11 +155,20 @@ class JDCompanionWindow(QWidget):
 
         header_layout.addLayout(title_box, 1)
 
-        # Shortcut pill hint
-        shortcut_lbl = QLabel(GLOBAL_HOTKEY_DISPLAY, self.header)
-        shortcut_lbl.setObjectName("ShortcutBadge")
-        shortcut_lbl.setToolTip(f"Global hotkey to summon or hide {APP_NAME}")
-        header_layout.addWidget(shortcut_lbl)
+        # View Switcher Tabs: Chat & Log
+        self.btn_tab_chat = QPushButton("💬 Chat", self.header)
+        self.btn_tab_chat.setProperty("class", "ViewTabBtn")
+        self.btn_tab_chat.setProperty("active", "true")
+        self.btn_tab_chat.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_tab_chat.clicked.connect(lambda: self._switch_view("chat"))
+        header_layout.addWidget(self.btn_tab_chat)
+
+        self.btn_tab_log = QPushButton("📋 Log", self.header)
+        self.btn_tab_log.setProperty("class", "ViewTabBtn")
+        self.btn_tab_log.setProperty("active", "false")
+        self.btn_tab_log.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_tab_log.clicked.connect(lambda: self._switch_view("log"))
+        header_layout.addWidget(self.btn_tab_log)
 
         # TTS Mute Toggle button
         self.btn_tts = QPushButton("🔊", self.header)
@@ -180,19 +199,43 @@ class JDCompanionWindow(QWidget):
 
         card_layout.addWidget(self.header)
 
-        # 2. Chat Widget (Messages area + Text input + Mic button)
-        self.chat_widget = ChatWidget(self.card)
-        card_layout.addWidget(self.chat_widget, 1)
+        # Stacked Widget to switch between Chat View and Action Log View
+        self.stack = QStackedWidget(self.card)
 
-        # 3. Microphone Indicator Widget (Visible when listening)
-        self.mic_indicator = MicrophoneIndicator(self.card)
-        # Position mic indicator inside the card right above the input bar
-        # We can add it directly to card_layout before input or inside chat widget
+        # ---------------- Page 0: Chat & Approval View ----------------
+        self.page_chat = QWidget()
+        page_chat_layout = QVBoxLayout(self.page_chat)
+        page_chat_layout.setContentsMargins(10, 8, 10, 8)
+        page_chat_layout.setSpacing(6)
+
+        # Approval Card (Prominently at the top of the companion workspace)
+        self.approval_widget = ApprovalWidget(self.page_chat)
+        page_chat_layout.addWidget(self.approval_widget)
+
+        # Chat conversation area
+        self.chat_widget = ChatWidget(self.page_chat)
+        page_chat_layout.addWidget(self.chat_widget, 1)
+
+        # Microphone indicator (reacts live to audio level)
+        self.mic_indicator = MicrophoneIndicator(self.page_chat)
         self.chat_widget.layout().insertWidget(1, self.mic_indicator)
 
+        self.stack.addWidget(self.page_chat)
+
+        # ---------------- Page 1: Persistent Action Log View ----------------
+        self.log_widget = ActionLogWidget(self.approval_gate.log, self.stack)
+        self.stack.addWidget(self.log_widget)
+
+        card_layout.addWidget(self.stack, 1)
         root_layout.addWidget(self.card)
 
+        self._update_log_tab_badge()
+
     def _setup_connections(self):
+        # View Switching
+        self.log_widget.backToChatRequested.connect(lambda: self._switch_view("chat"))
+        self.brain.requestSwitchView.connect(self._switch_view)
+
         # Chat inputs -> Companion Brain
         self.chat_widget.messageSubmitted.connect(self._handle_user_message)
         self.chat_widget.voiceToggleRequested.connect(self._toggle_voice_input)
@@ -200,6 +243,25 @@ class JDCompanionWindow(QWidget):
 
         # Brain -> Chat UI & TTS
         self.brain.responseReady.connect(self._handle_jd_response)
+        self.brain.requestTaskEnqueue.connect(self._enqueue_task_from_brain)
+        self.brain.requestPauseQueue.connect(self.approval_gate.pause_queue)
+        self.brain.requestResumeQueue.connect(self.approval_gate.resume_queue)
+        self.brain.requestCancelTask.connect(self.approval_gate.cancel_current_task)
+
+        # Approval Card controls -> ApprovalGate
+        self.approval_widget.approveClicked.connect(self.approval_gate.approve_action)
+        self.approval_widget.rejectClicked.connect(self.approval_gate.reject_action)
+        self.approval_widget.pauseClicked.connect(self.approval_gate.pause_queue)
+        self.approval_widget.resumeClicked.connect(self.approval_gate.resume_queue)
+        self.approval_widget.cancelClicked.connect(self.approval_gate.cancel_current_task)
+        self.approval_widget.quickDemoRequested.connect(self._trigger_demo_by_type)
+
+        # ApprovalGate -> UI & TTS
+        self.approval_gate.actionProposed.connect(self._on_action_proposed)
+        self.approval_gate.actionResolved.connect(self._on_action_resolved)
+        self.approval_gate.queueStatusChanged.connect(self._on_queue_status_changed)
+        self.approval_gate.taskExplanation.connect(self._on_task_explanation)
+        self.approval_gate.logUpdated.connect(self._on_log_updated)
 
         # Voice listener signals
         self.listener.listeningStarted.connect(self._on_listening_started)
@@ -227,8 +289,8 @@ class JDCompanionWindow(QWidget):
         mute_action = tray_menu.addAction("Toggle Voice Mute")
         mute_action.triggered.connect(self._toggle_tts_mute)
 
-        clear_action = tray_menu.addAction("Clear Conversation")
-        clear_action.triggered.connect(self._clear_conversation)
+        log_action = tray_menu.addAction("View Action Log")
+        log_action.triggered.connect(lambda: (self._switch_view("log"), self.show()))
 
         tray_menu.addSeparator()
         quit_action = tray_menu.addAction("Quit JD")
@@ -257,6 +319,71 @@ class JDCompanionWindow(QWidget):
         self.chat_widget.add_message("jd", greeting)
         self.tts.speak(greeting)
 
+    def _switch_view(self, view_name: str):
+        if view_name == "log":
+            self.stack.setCurrentIndex(1)
+            self.log_widget.refresh_log()
+            self.btn_tab_chat.setProperty("active", "false")
+            self.btn_tab_log.setProperty("active", "true")
+        else:
+            self.stack.setCurrentIndex(0)
+            self.btn_tab_chat.setProperty("active", "true")
+            self.btn_tab_log.setProperty("active", "false")
+
+        # Repolish tab buttons
+        self.btn_tab_chat.style().unpolish(self.btn_tab_chat)
+        self.btn_tab_chat.style().polish(self.btn_tab_chat)
+        self.btn_tab_log.style().unpolish(self.btn_tab_log)
+        self.btn_tab_log.style().polish(self.btn_tab_log)
+
+    def _update_log_tab_badge(self):
+        count = len(self.approval_gate.log.load_all())
+        self.btn_tab_log.setText(f"📋 Log ({count})" if count > 0 else "📋 Log")
+
+    # ---------------- Approval & Task Handlers ----------------
+    def _enqueue_task_from_brain(self, task_spec: dict):
+        self._switch_view("chat")
+        self.approval_gate.enqueue_task(task_spec["task_name"], task_spec["actions"])
+
+    def _trigger_demo_by_type(self, demo_type: str):
+        self._switch_view("chat")
+        if demo_type == "multi":
+            self.chat_widget.add_message("system", "Starting 3-step demonstration pipeline...")
+            self.approval_gate.enqueue_task(DEMO_MULTI_STEP_TASK["task_name"], DEMO_MULTI_STEP_TASK["actions"])
+        else:
+            self.chat_widget.add_message("system", "Proposing single demonstration action...")
+            self.approval_gate.enqueue_task(DEMO_SINGLE_TASK["task_name"], DEMO_SINGLE_TASK["actions"])
+
+    def _on_action_proposed(self, action_dict: dict):
+        # Switch to chat page so approval card is in front
+        self._switch_view("chat")
+        queue_size = self.approval_gate.get_queue_size()
+        self.approval_widget.present_action(action_dict, queue_size)
+
+        intent = action_dict.get("intent", "Action")
+        target = action_dict.get("target", "System")
+        spoken_prompt = f"Action proposed: {intent}. Affecting: {target}. Please approve or reject."
+        self.chat_widget.add_message("system", f"⚠️ Action Proposed: {intent} (Target: {target})")
+        self.tts.speak(spoken_prompt)
+
+    def _on_action_resolved(self, action_dict: dict):
+        if not self.approval_gate.get_current_action():
+            self.approval_widget.clear_action()
+
+    def _on_queue_status_changed(self, status: dict):
+        self.approval_widget.set_paused(status.get("is_paused", False))
+        if not status.get("has_current") and status.get("queue_size", 0) == 0:
+            self.approval_widget.clear_action()
+
+    def _on_task_explanation(self, explanation: str):
+        self.chat_widget.add_message("jd", explanation)
+        self.tts.speak(explanation)
+
+    def _on_log_updated(self):
+        self._update_log_tab_badge()
+        self.log_widget.refresh_log()
+
+    # ---------------- Speech & UI Handlers ----------------
     @pyqtSlot()
     def toggle_visibility(self):
         """Summons or hides JD smoothly from any application."""
@@ -269,7 +396,6 @@ class JDCompanionWindow(QWidget):
             self.chat_widget.input_field.setFocus()
 
     def _handle_user_message(self, text: str):
-        # Stop speech playback if user interjects
         self.tts.stop_speaking()
         self.brain.process_user_input(text)
 
@@ -311,10 +437,6 @@ class JDCompanionWindow(QWidget):
         else:
             self.btn_tts.setText("🔊")
             self.btn_tts.setToolTip("Voice speech active (Click to mute)")
-
-    def _clear_conversation(self):
-        # Re-add greeting only
-        pass
 
     def close_application(self):
         """Full clean application shutdown."""

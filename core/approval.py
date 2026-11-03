@@ -11,6 +11,7 @@ from typing import Optional, Dict, List, Any
 from PyQt6.QtCore import QObject, pyqtSignal
 
 from core.config import ACTION_LOG_PATH, DATA_DIR
+from core.planner import TaskPlan, PlanStep
 
 
 class ProposedAction:
@@ -144,6 +145,7 @@ class ApprovalGate(QObject):
     queueStatusChanged = pyqtSignal(dict)  # Queue count, is_paused, current task
     taskExplanation = pyqtSignal(str)      # Spoken & written explanation of task effect
     logUpdated = pyqtSignal()              # Triggered when log entries change
+    planUpdated = pyqtSignal(dict)         # Emitted when plan steps change status
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -151,6 +153,7 @@ class ApprovalGate(QObject):
         self._queue: List[ProposedAction] = []
         self._current_action: Optional[ProposedAction] = None
         self._is_paused: bool = False
+        self._active_plan: Optional[TaskPlan] = None
         self._tool_handlers = {}
 
     def register_tool_handler(self, tool_name: str, handler_callable):
@@ -165,6 +168,49 @@ class ApprovalGate(QObject):
 
     def get_queue_size(self) -> int:
         return len(self._queue)
+
+    def get_active_plan(self) -> Optional[TaskPlan]:
+        return self._active_plan
+
+    def enqueue_plan(self, plan: TaskPlan):
+        """
+        Enqueues a step-by-step task plan into the approval queue.
+        Each step must be approved individually before execution.
+        """
+        self._active_plan = plan
+
+        # Log the plan proposal in the persistent action log
+        plan_log_entry = ProposedAction(
+            task_id=plan.plan_id,
+            task_name=f"Plan: {plan.title}",
+            tool_name="planner_proposed",
+            intent=f"Formulated {len(plan.steps)}-step plan: {plan.goal}",
+            target="JD Plan HUD",
+            parameters={"steps": [s.intent for s in plan.steps]},
+            status="PLAN_PROPOSED",
+            decision="PROPOSED",
+            outcome=f"Plan initialized. Awaiting individual approval for step 1 of {len(plan.steps)}."
+        )
+        self.log.record_or_update(plan_log_entry)
+        self.logUpdated.emit()
+
+        # Enqueue each step as an individual ProposedAction
+        for step in plan.steps:
+            action = ProposedAction(
+                task_id=plan.plan_id,
+                task_name=plan.title,
+                tool_name=step.tool_name,
+                intent=step.intent,
+                target=step.target,
+                parameters=step.parameters,
+                effect_explanation=step.effect_explanation,
+                action_id=step.action_id,
+            )
+            self._queue.append(action)
+
+        self._emit_queue_status()
+        self.planUpdated.emit(self._active_plan.to_dict())
+        self._present_next()
 
     def enqueue_task(self, task_name: str, actions_specs: List[Dict[str, Any]]):
         """
@@ -195,7 +241,7 @@ class ApprovalGate(QObject):
             "queue_size": len(self._queue),
             "is_paused": self._is_paused,
             "has_current": self._current_action is not None,
-            "current_task": self._current_action.task_name if self._current_action else "",
+            "current_task": self._current_action.task_name if self._current_action else (self._active_plan.title if self._active_plan else ""),
         })
 
     def _present_next(self):
@@ -206,6 +252,15 @@ class ApprovalGate(QObject):
 
         self._current_action = self._queue.pop(0)
         self._current_action.status = "PENDING"
+
+        # Update step status in active plan if applicable
+        if self._active_plan:
+            for step in self._active_plan.steps:
+                if step.action_id == self._current_action.id:
+                    step.status = "awaiting approval"
+                    break
+            self.planUpdated.emit(self._active_plan.to_dict())
+
         self._emit_queue_status()
         self.actionProposed.emit(self._current_action.to_dict())
 
@@ -220,6 +275,14 @@ class ApprovalGate(QObject):
         action.decision = "APPROVED"
         action.status = "APPROVED"
         action.decision_time = datetime.now().strftime("%Y-%m-%d %I:%M:%S %p")
+
+        # Mark step in-progress in active plan
+        if self._active_plan:
+            for step in self._active_plan.steps:
+                if step.action_id == action.id:
+                    step.status = "in progress"
+                    break
+            self.planUpdated.emit(self._active_plan.to_dict())
 
         # Execute registered tool handler
         outcome_msg = ""
@@ -238,6 +301,32 @@ class ApprovalGate(QObject):
             action.status = "EXECUTED"
             action.outcome = "Executed (Demo confirmation completed)."
             outcome_msg = f"Action '{action.intent}' was approved and executed."
+
+        # Update step completed in active plan
+        if self._active_plan:
+            for step in self._active_plan.steps:
+                if step.action_id == action.id:
+                    step.status = "completed"
+                    step.outcome = action.outcome
+                    break
+
+            if all(s.status == "completed" for s in self._active_plan.steps):
+                self._active_plan.status = "completed"
+                self._active_plan.completed_at = datetime.now().strftime("%Y-%m-%d %I:%M:%S %p")
+                plan_comp_entry = ProposedAction(
+                    task_id=self._active_plan.plan_id,
+                    task_name=f"Plan: {self._active_plan.title}",
+                    tool_name="planner_completed",
+                    intent=f"Completed all {len(self._active_plan.steps)} steps in plan",
+                    target="JD Plan HUD",
+                    parameters={"steps_count": len(self._active_plan.steps)},
+                    status="PLAN_COMPLETED",
+                    decision="APPROVED",
+                    outcome=f"Plan '{self._active_plan.title}' finished successfully. All steps verified."
+                )
+                self.log.record_or_update(plan_comp_entry)
+
+            self.planUpdated.emit(self._active_plan.to_dict())
 
         # Save to persistent log
         self.log.record_or_update(action)
@@ -266,6 +355,31 @@ class ApprovalGate(QObject):
 
         # Save to persistent log
         self.log.record_or_update(action)
+
+        # Update step rejected in active plan & discard subsequent steps
+        if self._active_plan:
+            for step in self._active_plan.steps:
+                if step.action_id == action.id:
+                    step.status = "rejected"
+                    step.outcome = "Blocked: User rejected this operation."
+                elif step.status in ["pending", "awaiting approval"]:
+                    step.status = "canceled"
+                    step.outcome = f"Discarded because preceding step was rejected."
+            self._active_plan.status = "rejected"
+            self._active_plan.completed_at = datetime.now().strftime("%Y-%m-%d %I:%M:%S %p")
+            plan_rej_entry = ProposedAction(
+                task_id=self._active_plan.plan_id,
+                task_name=f"Plan: {self._active_plan.title}",
+                tool_name="planner_rejected",
+                intent=f"Plan halted due to rejection of action '{action.intent}'",
+                target="JD Plan HUD",
+                parameters={"rejected_step_id": action_id},
+                status="PLAN_REJECTED",
+                decision="REJECTED",
+                outcome=f"Plan '{self._active_plan.title}' stopped. Dependent steps discarded."
+            )
+            self.log.record_or_update(plan_rej_entry)
+            self.planUpdated.emit(self._active_plan.to_dict())
 
         # Discard remaining actions belonging to this same task
         discarded_count = 0
@@ -302,6 +416,9 @@ class ApprovalGate(QObject):
     def pause_queue(self):
         """Pauses the action queue. Pending actions will not be presented."""
         self._is_paused = True
+        if self._active_plan and self._active_plan.status == "in progress":
+            self._active_plan.status = "paused"
+            self.planUpdated.emit(self._active_plan.to_dict())
         self._emit_queue_status()
         self.taskExplanation.emit(
             "Action queue paused. No further pending actions will be presented until resumed."
@@ -310,6 +427,9 @@ class ApprovalGate(QObject):
     def resume_queue(self):
         """Resumes the action queue."""
         self._is_paused = False
+        if self._active_plan and self._active_plan.status == "paused":
+            self._active_plan.status = "in progress"
+            self.planUpdated.emit(self._active_plan.to_dict())
         self._emit_queue_status()
         self.taskExplanation.emit("Action queue resumed.")
         self._present_next()
@@ -318,12 +438,34 @@ class ApprovalGate(QObject):
         """
         Cancels the active task, discards all its pending actions, and stops the task.
         """
-        if not self._current_action and not self._queue:
+        if not self._current_action and not self._queue and not self._active_plan:
             self.taskExplanation.emit("No active task to cancel.")
             return
 
-        current_task_id = self._current_action.task_id if self._current_action else self._queue[0].task_id
-        task_name = self._current_action.task_name if self._current_action else self._queue[0].task_name
+        current_task_id = self._current_action.task_id if self._current_action else (self._queue[0].task_id if self._queue else (self._active_plan.plan_id if self._active_plan else ""))
+        task_name = self._current_action.task_name if self._current_action else (self._queue[0].task_name if self._queue else (self._active_plan.title if self._active_plan else ""))
+
+        # Cancel active plan steps
+        if self._active_plan and self._active_plan.plan_id == current_task_id:
+            for step in self._active_plan.steps:
+                if step.status in ["pending", "awaiting approval", "in progress"]:
+                    step.status = "canceled"
+                    step.outcome = "Canceled by user request."
+            self._active_plan.status = "canceled"
+            self._active_plan.completed_at = datetime.now().strftime("%Y-%m-%d %I:%M:%S %p")
+            plan_cancel_entry = ProposedAction(
+                task_id=self._active_plan.plan_id,
+                task_name=f"Plan: {self._active_plan.title}",
+                tool_name="planner_canceled",
+                intent="Plan canceled by user request",
+                target="JD Plan HUD",
+                parameters={"plan_id": self._active_plan.plan_id},
+                status="PLAN_CANCELED",
+                decision="CANCELED",
+                outcome=f"Plan '{self._active_plan.title}' canceled. All remaining steps discarded."
+            )
+            self.log.record_or_update(plan_cancel_entry)
+            self.planUpdated.emit(self._active_plan.to_dict())
 
         # Cancel current action if pending
         if self._current_action and self._current_action.task_id == current_task_id:

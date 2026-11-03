@@ -14,15 +14,15 @@ ACTION_LOG_PATH = DATA_DIR / "action_log.json"
 # App Identity
 APP_NAME = "JD"
 APP_SUBTITLE = "Personal AI Desktop Assistant"
-APP_VERSION = "0.2.0 (Task 2)"
+APP_VERSION = "0.3.0 (Task 3)"
 
 # Global Shortcut to summon/hide JD
 GLOBAL_HOTKEY = "<ctrl>+<alt>+j"
 GLOBAL_HOTKEY_DISPLAY = "Ctrl + Alt + J"
 
 # UI Dimensions
-WINDOW_WIDTH = 420
-WINDOW_HEIGHT = 600
+WINDOW_WIDTH = 440
+WINDOW_HEIGHT = 660
 AVATAR_SIZE = 42
 
 # Color Palette (Grounded in the JD Robot Helmet & Lilac background)
@@ -42,12 +42,19 @@ COLOR_MINT_BG = "rgba(82, 255, 184, 0.12)"
 COLOR_LILAC = "#D2CAE6"
 COLOR_LILAC_MUTED = "#8E88A6"
 
-# Status colors for Approval System
+# Status colors for Approval System & Task Planner
 COLOR_APPROVED = "#52FFB8"
 COLOR_REJECTED = "#FF5E5E"
 COLOR_PAUSED = "#FFB84D"
 COLOR_CANCELED = "#8E95A5"
 COLOR_PENDING = "#4DA6FF"
+
+COLOR_STATUS_PENDING = "#4DA6FF"
+COLOR_STATUS_AWAITING = "#FFAA33"
+COLOR_STATUS_PROGRESS = "#52FFB8"
+COLOR_STATUS_COMPLETED = "#38E5A0"
+COLOR_STATUS_REJECTED = "#FF5E5E"
+COLOR_STATUS_CANCELED = "#8E95A5"
 
 # Typography Colors
 COLOR_TEXT_PRIMARY = "#F3F5F7"

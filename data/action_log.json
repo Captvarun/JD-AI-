@@ -1,5 +1,320 @@
 [
   {
+    "id": "step_1_c83db7",
+    "task_id": "plan_64d08009",
+    "task_name": "Assistant Health & Latency Inspection",
+    "tool_name": "demo_diagnostic",
+    "intent": "Step 1: Measure internal dialogue and speech latency",
+    "target": "JD Core Dialogue Subsystem",
+    "parameters": {
+      "step": 1,
+      "metric": "response_latency"
+    },
+    "effect_explanation": "Measures thread and speech queue latency.",
+    "status": "EXECUTED",
+    "decision": "APPROVED",
+    "created_at": "2026-11-03 11:47:41 PM",
+    "decision_time": "2026-11-03 11:47:41 PM",
+    "outcome": "Executed successfully: Diagnostic pulse successful: Internal state intact, speech latency nominal."
+  },
+  {
+    "id": "act_f7e29476",
+    "task_id": "plan_64d08009",
+    "task_name": "Plan: Assistant Health & Latency Inspection",
+    "tool_name": "planner_proposed",
+    "intent": "Formulated 3-step plan: Deconstructed task from: 'verify audio alert and system health'",
+    "target": "JD Plan HUD",
+    "parameters": {
+      "steps": [
+        "Step 1: Measure internal dialogue and speech latency",
+        "Step 2: Trigger Windows audio alert chime to confirm notification pipeline",
+        "Step 3: Snapshot verified configuration in assistant store"
+      ]
+    },
+    "effect_explanation": "",
+    "status": "PLAN_PROPOSED",
+    "decision": "PROPOSED",
+    "created_at": "2026-11-03 11:47:41 PM",
+    "decision_time": "",
+    "outcome": "Plan initialized. Awaiting individual approval for step 1 of 3."
+  },
+  {
+    "id": "step_3_6eaeb2",
+    "task_id": "plan_26216098",
+    "task_name": "Assistant Health & Latency Inspection",
+    "tool_name": "demo_checkpoint",
+    "intent": "Step 3: Snapshot verified configuration in assistant store",
+    "target": "JD Session Store",
+    "parameters": {
+      "step": 3,
+      "checkpoint_id": "health_audit_snapshot"
+    },
+    "effect_explanation": "Saves post-inspection session checkpoint.",
+    "status": "CANCELED",
+    "decision": "CANCELED",
+    "created_at": "2026-11-03 11:47:25 PM",
+    "decision_time": "2026-11-03 11:47:25 PM",
+    "outcome": "Canceled: Task was aborted before reaching this step."
+  },
+  {
+    "id": "step_2_342630",
+    "task_id": "plan_26216098",
+    "task_name": "Assistant Health & Latency Inspection",
+    "tool_name": "demo_chime",
+    "intent": "Step 2: Trigger Windows audio alert chime to confirm notification pipeline",
+    "target": "Windows Audio Notification Subsystem",
+    "parameters": {
+      "step": 2,
+      "sound": "MB_ICONASTERISK"
+    },
+    "effect_explanation": "Emits a standard notification chime.",
+    "status": "CANCELED",
+    "decision": "CANCELED",
+    "created_at": "2026-11-03 11:47:25 PM",
+    "decision_time": "2026-11-03 11:47:25 PM",
+    "outcome": "Canceled: Task was aborted before reaching this step."
+  },
+  {
+    "id": "step_1_884b96",
+    "task_id": "plan_26216098",
+    "task_name": "Assistant Health & Latency Inspection",
+    "tool_name": "demo_diagnostic",
+    "intent": "Step 1: Measure internal dialogue and speech latency",
+    "target": "JD Core Dialogue Subsystem",
+    "parameters": {
+      "step": 1,
+      "metric": "response_latency"
+    },
+    "effect_explanation": "Measures thread and speech queue latency.",
+    "status": "CANCELED",
+    "decision": "CANCELED",
+    "created_at": "2026-11-03 11:47:25 PM",
+    "decision_time": "2026-11-03 11:47:25 PM",
+    "outcome": "Canceled by user request."
+  },
+  {
+    "id": "act_1e5faa34",
+    "task_id": "plan_26216098",
+    "task_name": "Plan: Assistant Health & Latency Inspection",
+    "tool_name": "planner_canceled",
+    "intent": "Plan canceled by user request",
+    "target": "JD Plan HUD",
+    "parameters": {
+      "plan_id": "plan_26216098"
+    },
+    "effect_explanation": "",
+    "status": "PLAN_CANCELED",
+    "decision": "CANCELED",
+    "created_at": "2026-11-03 11:47:25 PM",
+    "decision_time": "",
+    "outcome": "Plan 'Assistant Health & Latency Inspection' canceled. All remaining steps discarded."
+  },
+  {
+    "id": "act_81f79493",
+    "task_id": "plan_26216098",
+    "task_name": "Plan: Assistant Health & Latency Inspection",
+    "tool_name": "planner_proposed",
+    "intent": "Formulated 3-step plan: Deconstructed task from: 'full health check'",
+    "target": "JD Plan HUD",
+    "parameters": {
+      "steps": [
+        "Step 1: Measure internal dialogue and speech latency",
+        "Step 2: Trigger Windows audio alert chime to confirm notification pipeline",
+        "Step 3: Snapshot verified configuration in assistant store"
+      ]
+    },
+    "effect_explanation": "",
+    "status": "PLAN_PROPOSED",
+    "decision": "PROPOSED",
+    "created_at": "2026-11-03 11:47:25 PM",
+    "decision_time": "",
+    "outcome": "Plan initialized. Awaiting individual approval for step 1 of 3."
+  },
+  {
+    "id": "step_3_66460c",
+    "task_id": "plan_24730308",
+    "task_name": "Assistant Health & Latency Inspection",
+    "tool_name": "demo_checkpoint",
+    "intent": "Step 3: Snapshot verified configuration in assistant store",
+    "target": "JD Session Store",
+    "parameters": {
+      "step": 3,
+      "checkpoint_id": "health_audit_snapshot"
+    },
+    "effect_explanation": "Saves post-inspection session checkpoint.",
+    "status": "CANCELED",
+    "decision": "CANCELED",
+    "created_at": "2026-11-03 11:47:24 PM",
+    "decision_time": "2026-11-03 11:47:25 PM",
+    "outcome": "Discarded because preceding step 'Step 2: Trigger Windows audio alert chime to confirm notification pipeline' was rejected."
+  },
+  {
+    "id": "act_aea1c0d2",
+    "task_id": "plan_24730308",
+    "task_name": "Plan: Assistant Health & Latency Inspection",
+    "tool_name": "planner_rejected",
+    "intent": "Plan halted due to rejection of action 'Step 2: Trigger Windows audio alert chime to confirm notification pipeline'",
+    "target": "JD Plan HUD",
+    "parameters": {
+      "rejected_step_id": "step_2_97d9ca"
+    },
+    "effect_explanation": "",
+    "status": "PLAN_REJECTED",
+    "decision": "REJECTED",
+    "created_at": "2026-11-03 11:47:25 PM",
+    "decision_time": "",
+    "outcome": "Plan 'Assistant Health & Latency Inspection' stopped. Dependent steps discarded."
+  },
+  {
+    "id": "step_2_97d9ca",
+    "task_id": "plan_24730308",
+    "task_name": "Assistant Health & Latency Inspection",
+    "tool_name": "demo_chime",
+    "intent": "Step 2: Trigger Windows audio alert chime to confirm notification pipeline",
+    "target": "Windows Audio Notification Subsystem",
+    "parameters": {
+      "step": 2,
+      "sound": "MB_ICONASTERISK"
+    },
+    "effect_explanation": "Emits a standard notification chime.",
+    "status": "REJECTED",
+    "decision": "REJECTED",
+    "created_at": "2026-11-03 11:47:24 PM",
+    "decision_time": "2026-11-03 11:47:25 PM",
+    "outcome": "Blocked: User rejected this operation."
+  },
+  {
+    "id": "step_1_ef4a8e",
+    "task_id": "plan_24730308",
+    "task_name": "Assistant Health & Latency Inspection",
+    "tool_name": "demo_diagnostic",
+    "intent": "Step 1: Measure internal dialogue and speech latency",
+    "target": "JD Core Dialogue Subsystem",
+    "parameters": {
+      "step": 1,
+      "metric": "response_latency"
+    },
+    "effect_explanation": "Measures thread and speech queue latency.",
+    "status": "EXECUTED",
+    "decision": "APPROVED",
+    "created_at": "2026-11-03 11:47:24 PM",
+    "decision_time": "2026-11-03 11:47:24 PM",
+    "outcome": "Executed successfully: Diagnostic pulse successful: Internal state intact, speech latency nominal."
+  },
+  {
+    "id": "act_32b68b13",
+    "task_id": "plan_24730308",
+    "task_name": "Plan: Assistant Health & Latency Inspection",
+    "tool_name": "planner_proposed",
+    "intent": "Formulated 3-step plan: Deconstructed task from: 'test audio and diagnostic'",
+    "target": "JD Plan HUD",
+    "parameters": {
+      "steps": [
+        "Step 1: Measure internal dialogue and speech latency",
+        "Step 2: Trigger Windows audio alert chime to confirm notification pipeline",
+        "Step 3: Snapshot verified configuration in assistant store"
+      ]
+    },
+    "effect_explanation": "",
+    "status": "PLAN_PROPOSED",
+    "decision": "PROPOSED",
+    "created_at": "2026-11-03 11:47:24 PM",
+    "decision_time": "",
+    "outcome": "Plan initialized. Awaiting individual approval for step 1 of 3."
+  },
+  {
+    "id": "step_3_0b7d56",
+    "task_id": "plan_a5405b98",
+    "task_name": "Full System Diagnostic & Audio Checkpoint Audit",
+    "tool_name": "demo_checkpoint",
+    "intent": "Step 3: Save verified session restore point to memory",
+    "target": "JD Session Store",
+    "parameters": {
+      "step": 3,
+      "checkpoint_id": "post_audit_snapshot"
+    },
+    "effect_explanation": "Saves clean verified state snapshot.",
+    "status": "EXECUTED",
+    "decision": "APPROVED",
+    "created_at": "2026-11-03 11:47:24 PM",
+    "decision_time": "2026-11-03 11:47:24 PM",
+    "outcome": "Executed successfully: Session checkpoint 'post_audit_snapshot' saved to memory."
+  },
+  {
+    "id": "act_a8ed1f9a",
+    "task_id": "plan_a5405b98",
+    "task_name": "Plan: Full System Diagnostic & Audio Checkpoint Audit",
+    "tool_name": "planner_completed",
+    "intent": "Completed all 3 steps in plan",
+    "target": "JD Plan HUD",
+    "parameters": {
+      "steps_count": 3
+    },
+    "effect_explanation": "",
+    "status": "PLAN_COMPLETED",
+    "decision": "APPROVED",
+    "created_at": "2026-11-03 11:47:24 PM",
+    "decision_time": "",
+    "outcome": "Plan 'Full System Diagnostic & Audio Checkpoint Audit' finished successfully. All steps verified."
+  },
+  {
+    "id": "step_2_74cbdb",
+    "task_id": "plan_a5405b98",
+    "task_name": "Full System Diagnostic & Audio Checkpoint Audit",
+    "tool_name": "demo_chime",
+    "intent": "Step 2: Trigger Windows notification chime to test alert bridge",
+    "target": "Windows Audio Notification Subsystem",
+    "parameters": {
+      "step": 2,
+      "sound": "MB_ICONASTERISK"
+    },
+    "effect_explanation": "Will play an audible chime on laptop speakers.",
+    "status": "EXECUTED",
+    "decision": "APPROVED",
+    "created_at": "2026-11-03 11:47:24 PM",
+    "decision_time": "2026-11-03 11:47:24 PM",
+    "outcome": "Executed successfully: Windows notification chime sounded."
+  },
+  {
+    "id": "step_1_6fc5fe",
+    "task_id": "plan_a5405b98",
+    "task_name": "Full System Diagnostic & Audio Checkpoint Audit",
+    "tool_name": "demo_diagnostic",
+    "intent": "Step 1: Check internal memory health and worker responsiveness",
+    "target": "JD Core Health Subsystem",
+    "parameters": {
+      "step": 1,
+      "test": "memory_readiness"
+    },
+    "effect_explanation": "Verifies memory baseline. If rejected, subsequent steps will not proceed.",
+    "status": "EXECUTED",
+    "decision": "APPROVED",
+    "created_at": "2026-11-03 11:47:24 PM",
+    "decision_time": "2026-11-03 11:47:24 PM",
+    "outcome": "Executed successfully: Diagnostic pulse successful: Internal state intact, speech latency nominal."
+  },
+  {
+    "id": "act_280e14c2",
+    "task_id": "plan_a5405b98",
+    "task_name": "Plan: Full System Diagnostic & Audio Checkpoint Audit",
+    "tool_name": "planner_proposed",
+    "intent": "Formulated 3-step plan: Perform end-to-end audit: health pulse, notification chime, and state snapshot",
+    "target": "JD Plan HUD",
+    "parameters": {
+      "steps": [
+        "Step 1: Check internal memory health and worker responsiveness",
+        "Step 2: Trigger Windows notification chime to test alert bridge",
+        "Step 3: Save verified session restore point to memory"
+      ]
+    },
+    "effect_explanation": "",
+    "status": "PLAN_PROPOSED",
+    "decision": "PROPOSED",
+    "created_at": "2026-11-03 11:47:24 PM",
+    "decision_time": "",
+    "outcome": "Plan initialized. Awaiting individual approval for step 1 of 3."
+  },
+  {
     "id": "act_11e00e3f",
     "task_id": "task_f75c63",
     "task_name": "Assistant Diagnostic Self-Test",

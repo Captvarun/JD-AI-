@@ -32,11 +32,13 @@ from ui.styles import MAIN_STYLESHEET
 from ui.mic_indicator import MicrophoneIndicator
 from ui.chat_widget import ChatWidget
 from ui.approval_widget import ApprovalWidget
+from ui.plan_widget import PlanWidget
 from ui.log_widget import ActionLogWidget
 from core.voice import TTSWorker, VoiceListener
 from core.companion import CompanionBrain
 from core.hotkey import GlobalHotkeyManager
 from core.approval import ApprovalGate
+from core.planner import TaskPlanner, TaskPlan
 from core.demo_tools import DEMO_TOOL_REGISTRY, DEMO_SINGLE_TASK, DEMO_MULTI_STEP_TASK
 
 
@@ -78,6 +80,7 @@ class JDCompanionWindow(QWidget):
 
         # Core subsystems
         self.brain = CompanionBrain(self)
+        self.planner = TaskPlanner(self)
         self.approval_gate = ApprovalGate(self)
         for tool_name, handler in DEMO_TOOL_REGISTRY.items():
             self.approval_gate.register_tool_handler(tool_name, handler)
@@ -208,6 +211,10 @@ class JDCompanionWindow(QWidget):
         page_chat_layout.setContentsMargins(10, 8, 10, 8)
         page_chat_layout.setSpacing(6)
 
+        # Plan HUD (Visual step-by-step progress & statuses)
+        self.plan_widget = PlanWidget(self.page_chat)
+        page_chat_layout.addWidget(self.plan_widget)
+
         # Approval Card (Prominently at the top of the companion workspace)
         self.approval_widget = ApprovalWidget(self.page_chat)
         page_chat_layout.addWidget(self.approval_widget)
@@ -244,9 +251,14 @@ class JDCompanionWindow(QWidget):
         # Brain -> Chat UI & TTS
         self.brain.responseReady.connect(self._handle_jd_response)
         self.brain.requestTaskEnqueue.connect(self._enqueue_task_from_brain)
+        self.brain.requestPlanSynthesis.connect(self._handle_plan_request)
         self.brain.requestPauseQueue.connect(self.approval_gate.pause_queue)
         self.brain.requestResumeQueue.connect(self.approval_gate.resume_queue)
         self.brain.requestCancelTask.connect(self.approval_gate.cancel_current_task)
+
+        # Plan HUD controls -> Planner & ApprovalGate
+        self.plan_widget.planPresetRequested.connect(self._handle_plan_preset)
+        self.approval_gate.planUpdated.connect(self.plan_widget.update_plan)
 
         # Approval Card controls -> ApprovalGate
         self.approval_widget.approveClicked.connect(self.approval_gate.approve_action)
@@ -341,6 +353,22 @@ class JDCompanionWindow(QWidget):
         self.btn_tab_log.setText(f"📋 Log ({count})" if count > 0 else "📋 Log")
 
     # ---------------- Approval & Task Handlers ----------------
+    def _handle_plan_request(self, prompt: str):
+        self._switch_view("chat")
+        plan = self.planner.plan_from_text(prompt)
+        self.chat_widget.add_message("system", f"📋 Plan Formulated: '{plan.title}' with {len(plan.steps)} steps.")
+        self.approval_gate.enqueue_plan(plan)
+        spoken_text = f"I have formulated a plan for {plan.title}. Step 1 is awaiting your explicit approval."
+        self.tts.speak(spoken_text)
+
+    def _handle_plan_preset(self, preset_type: str):
+        self._switch_view("chat")
+        plan = self.planner.create_preset_plan(preset_type)
+        self.chat_widget.add_message("system", f"📋 Plan Formulated: '{plan.title}' with {len(plan.steps)} steps.")
+        self.approval_gate.enqueue_plan(plan)
+        spoken_text = f"I have formulated a plan for {plan.title}. Step 1 is awaiting your explicit approval."
+        self.tts.speak(spoken_text)
+
     def _enqueue_task_from_brain(self, task_spec: dict):
         self._switch_view("chat")
         self.approval_gate.enqueue_task(task_spec["task_name"], task_spec["actions"])
@@ -348,8 +376,7 @@ class JDCompanionWindow(QWidget):
     def _trigger_demo_by_type(self, demo_type: str):
         self._switch_view("chat")
         if demo_type == "multi":
-            self.chat_widget.add_message("system", "Starting 3-step demonstration pipeline...")
-            self.approval_gate.enqueue_task(DEMO_MULTI_STEP_TASK["task_name"], DEMO_MULTI_STEP_TASK["actions"])
+            self._handle_plan_preset("audit")
         else:
             self.chat_widget.add_message("system", "Proposing single demonstration action...")
             self.approval_gate.enqueue_task(DEMO_SINGLE_TASK["task_name"], DEMO_SINGLE_TASK["actions"])
@@ -362,8 +389,15 @@ class JDCompanionWindow(QWidget):
 
         intent = action_dict.get("intent", "Action")
         target = action_dict.get("target", "System")
-        spoken_prompt = f"Action proposed: {intent}. Affecting: {target}. Please approve or reject."
-        self.chat_widget.add_message("system", f"⚠️ Action Proposed: {intent} (Target: {target})")
+        active_plan = self.approval_gate.get_active_plan()
+        if active_plan:
+            curr_step = active_plan.current_step()
+            step_num = curr_step.step_number if curr_step else 1
+            spoken_prompt = f"Step {step_num} of {len(active_plan.steps)} proposed: {intent}. Affecting: {target}. Please approve or reject."
+            self.chat_widget.add_message("system", f"⚠️ Step #{step_num} Proposed: {intent} (Target: {target})")
+        else:
+            spoken_prompt = f"Action proposed: {intent}. Affecting: {target}. Please approve or reject."
+            self.chat_widget.add_message("system", f"⚠️ Action Proposed: {intent} (Target: {target})")
         self.tts.speak(spoken_prompt)
 
     def _on_action_resolved(self, action_dict: dict):

@@ -16,6 +16,7 @@ class CompanionBrain(QObject):
     """
     responseReady = pyqtSignal(str)
     requestTaskEnqueue = pyqtSignal(dict)  # Emits task spec to ApprovalGate
+    requestPlanSynthesis = pyqtSignal(str) # Emits user task prompt to Planner
     requestPauseQueue = pyqtSignal()
     requestResumeQueue = pyqtSignal()
     requestCancelTask = pyqtSignal()
@@ -23,8 +24,8 @@ class CompanionBrain(QObject):
 
     INITIAL_GREETING = (
         "Greetings! I am JD, your personal AI desktop assistant. "
-        "Task 2 is active: my explicit approval checkpoint and persistent action log are operational. "
-        "You can type or say 'demo' to test an action proposal, or press Ctrl+Alt+J to summon or hide me."
+        "Task 3 planning flow is active: submit any task via text or voice, and I will formulate "
+        "a step-by-step plan in your HUD with individual approval for each step."
     )
 
     def __init__(self, parent=None):
@@ -53,30 +54,42 @@ class CompanionBrain(QObject):
         self.record_message("user", text)
         lowered = text.lower()
 
+        # Handle Planning Flow triggers (voice or text)
+        if any(w in lowered for w in ["plan", "formulate plan", "create plan", "make a plan", "audit", "diagnostic", "inspect", "system check"]) and not any(w in lowered for w in ["how does planning work", "explain plan", "what is a plan"]):
+            reply = f"Formulating a step-by-step plan for '{text}'. Each step will be presented in the HUD for individual approval."
+            self.requestPlanSynthesis.emit(text)
+
         # Handle Action Approval System triggers
-        if any(w in lowered for w in ["run demo", "single demo", "test action", "test approval", "start demo", "propose action"]) or lowered == "demo":
+        elif any(w in lowered for w in ["run demo", "single demo", "test action", "test approval", "start demo", "propose action"]) or lowered == "demo":
             reply = "Proposing a demonstration action for your approval now. Please review the details on the approval card above."
             self.requestTaskEnqueue.emit(DEMO_SINGLE_TASK)
 
         elif any(w in lowered for w in ["multi demo", "multi-step", "pipeline", "test pipeline", "run pipeline"]):
-            reply = "Initiating a 3-step demonstration pipeline. I will propose each action one by one for your individual approval."
-            self.requestTaskEnqueue.emit(DEMO_MULTI_STEP_TASK)
+            reply = "Formulating a multi-step demonstration plan. Steps will appear in the Plan HUD."
+            self.requestPlanSynthesis.emit("multi-step health & notification pipeline")
 
-        elif lowered in ["pause", "pause queue", "pause actions"]:
-            reply = "Pausing the action queue as requested."
+        elif lowered in ["pause", "pause queue", "pause actions", "pause plan"]:
+            reply = "Pausing the active plan and action queue as requested."
             self.requestPauseQueue.emit()
 
-        elif lowered in ["resume", "resume queue", "unpause"]:
-            reply = "Resuming the action queue."
+        elif lowered in ["resume", "resume queue", "unpause", "resume plan"]:
+            reply = "Resuming the active plan and action queue."
             self.requestResumeQueue.emit()
 
-        elif lowered in ["cancel", "cancel task", "abort", "stop task"]:
-            reply = "Canceling active task and discarding all pending actions."
+        elif lowered in ["cancel", "cancel task", "abort", "stop task", "cancel plan"]:
+            reply = "Canceling active plan and discarding all pending actions."
             self.requestCancelTask.emit()
 
         elif any(w in lowered for w in ["show logs", "view log", "action log", "history", "persistent log"]):
             reply = "Opening your persistent Action Log."
             self.requestSwitchView.emit("log")
+
+        elif any(w in lowered for w in ["planning", "how does planning work", "explain plan"]):
+            reply = (
+                "When you give me a task, I formulate a step-by-step plan displayed in the HUD. "
+                "Each step shows its real-time status: pending, awaiting approval, in progress, completed, rejected, or canceled. "
+                "Crucially, plan approval never bundles actions: you approve or reject each action individually at the approval checkpoint."
+            )
 
         # Conversational greetings and queries
         elif any(w in lowered for w in ["hi", "hello", "hey", "greetings"]):

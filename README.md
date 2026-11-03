@@ -46,9 +46,32 @@ JD is a personal AI desktop assistant built specifically for Windows. This repos
 - **Persistent Action Log (`data/action_log.json`)**:
   - Immutable record storing Task Name, Intent, Target, Decision (`APPROVED`, `REJECTED`, `CANCELED`), Timestamp, and Outcome.
   - **Survives restarts**: Viewable directly in JD via the `📋 Log` tab in the header.
-- **Safe Built-in Demonstration Tools**:
-  - Safe diagnostic pulses, notification audio chimes, and state checkpoints.
-  - Type or say `"demo"` or `"pipeline"` (or click `[🧪 Propose Demo Action]` / `[⚡ Propose 3-Step Pipeline]`) to test the complete flow.
+
+### Task 3: Working Task Planning Flow
+- **Task Submission via Text or Voice**:
+  - Submit any multi-step task by voice (clicking the mic) or by typing in the input box (e.g. *"Plan a health audit and audio test"* or *"Check memory and save checkpoint"*).
+  - Quick-start preset buttons in the HUD: **`[🔍 Health Audit (3 Steps)]`** and **`[🔔 Audio Alert (2 Steps)]`**.
+- **Step-by-Step Plan HUD (`PlanWidget`)**:
+  - Visualizes the proposed plan in the floating companion window:
+    - **Title & Goal**: Clear summary of the task objective.
+    - **Overall Progress**: Dynamic progress bar and step counter (e.g., `Step 2 of 3 (66%)`).
+    - **Real-time Step Status Badges**:
+      - `PENDING`: Waiting in plan queue.
+      - `AWAITING APPROVAL`: Currently presented at the Approval Gate.
+      - `IN PROGRESS`: Actively executing.
+      - `COMPLETED`: Successfully finished.
+      - `REJECTED`: Blocked by user rejection.
+      - `CANCELED`: Discarded or canceled due to preceding failure or user cancel.
+- **Strict Individual Step Approval**:
+  - **A plan-level approval never approves individual actions.**
+  - Showing the proposed plan does not execute anything until each individual action is reviewed and approved in the Approval Card.
+- **Persistent Plan Logging**:
+  - Every plan formulation event, step status transition, individual user decision, and final plan outcome is recorded in `data/action_log.json` and retained across restarts.
+- **Unified Pause & Cancel**:
+  - Pausing freezes both the active plan HUD and the approval queue.
+  - Canceling immediately stops the active task, marks all pending steps as `CANCELED`, and records the cancellation outcome.
+- **Safe Local Tools**:
+  - Employs local planning logic and safe built-in actions (`demo_diagnostic`, `demo_chime`, `demo_checkpoint`) without external network, shell, or third-party app exposure.
 
 ---
 
@@ -64,15 +87,17 @@ JD/
 │   ├── __init__.py
 │   ├── config.py              # Palette, hotkey, window dimensions, audio config
 │   ├── companion.py           # Dialogue manager and assistant state
+│   ├── planner.py             # Local task planner & plan step models
+│   ├── approval.py            # Central ApprovalGate, ActionQueue, and PersistentActionLog
 │   ├── voice.py               # Windows SAPI5 TTS worker & live microphone listener
 │   ├── hotkey.py              # Global Windows hotkey listener (Ctrl+Alt+J)
-│   ├── approval.py            # Central ApprovalGate, ActionQueue, and PersistentActionLog
-│   └── demo_tools.py          # Safe built-in demonstration tools for Task 2
+│   └── demo_tools.py          # Safe built-in demonstration tools
 ├── ui/
 │   ├── __init__.py
 │   ├── styles.py              # Dark theme QSS styling with glowing mint accents
 │   ├── mic_indicator.py       # Animated audio-reactive glowing microphone widget
 │   ├── chat_widget.py         # Message history, text input, and send controls
+│   ├── plan_widget.py         # Step-by-step Plan HUD with progress & status badges
 │   ├── approval_widget.py     # Approval Card with Approve, Reject, Pause, and Cancel
 │   ├── log_widget.py          # Persistent Action Log viewer with status badges
 │   └── companion_window.py    # Main frameless floating companion window
@@ -99,5 +124,5 @@ cd "C:\Users\M S VARUN\OneDrive\Desktop\JD"
 * `Ctrl + Alt + J`: Summon or hide JD from anywhere in Windows.
 * `Enter` / `Return`: Approve proposed action (or send message in chat input).
 * `Escape`: Reject proposed action.
-* `P`: Pause / Resume action queue.
-* `C`: Cancel active task.
+* `P`: Pause / Resume action queue & active plan.
+* `C`: Cancel active task & plan.
